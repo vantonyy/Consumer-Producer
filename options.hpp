@@ -15,8 +15,8 @@ public:
 	class def
 	{
 	public:
-		def(const std::string& name = "",
-		    const std::string& defaultValue = "")
+		def(const std::string& name,
+		    const std::string& defaultValue)
 			: m_name(name)
 			, m_value(defaultValue)
 		{
@@ -42,7 +42,7 @@ public:
 	public:
 		std::string m_name;
 		std::string m_value;
-	}; // @class def
+	}; // class def
 
 private:
 	typedef std::map<std::string, def> nameToDef;
@@ -54,7 +54,7 @@ public:
 	}
 
 	//@brief checks the given option anme
-	bool isValidName(const std::string& name) const
+	bool isValidOption(const std::string& name) const
 	{
 		return m_nameToDef.find(name) != m_nameToDef.end();
 	}
@@ -62,7 +62,7 @@ public:
 	//@brief sets value for given option
 	void setValue(const std::string& name, const std::string& value)
 	{
-		assert(isValidName(name));
+		assert(isValidOption(name));
 		nameToDef::iterator i = m_nameToDef.find(name);
 		i->second.setValue(value);
 	}
@@ -71,7 +71,7 @@ public:
 	template <typename ValueType>
 	bool getValue(const std::string& name, ValueType& value) const
 	{
-		assert(isValidName(name));
+		assert(isValidOption(name));
 		nameToDef::const_iterator i = m_nameToDef.find(name);
 		std::stringstream ss(i->second.getValue());
 		ss >> value;
