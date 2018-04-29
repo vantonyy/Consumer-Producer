@@ -8,6 +8,17 @@ namespace consumerProducer {
 
 namespace {
 
+//@class sharedData
+class sharedData
+{
+public:
+	static std::atomic<int> activeProducersCount;
+	static threadSafeQueue<int> dataQueue;
+}; // class sharedData
+
+std::atomic<int> sharedData::activeProducersCount(0);
+threadSafeQueue<int> sharedData::dataQueue(100, 80);
+
 //@brief generates random number in given range
 inline int random(int lb, int ub)
 {
@@ -28,8 +39,12 @@ consumerProducerManager& consumerProducerManager::getInstance()
 
 void consumerProducerManager::signalHandler(int sigNum)
 {
-	assert(SIGINT == sigNum);
-	workerThread::interrupt(true);
+	switch (sigNum)	{
+	case SIGINT:
+		workerThread::interrupt(true);
+	default:
+		break;
+	}
 }
 
 void consumerProducerManager::createProducers(unsigned numOfProducers)
@@ -59,17 +74,26 @@ void consumerProducerManager::createWorkers(unsigned n, Args&&... args)
 	}
 }
 
-void consumerProducerManager::joinThreads()
+void consumerProducerManager::cleanup()
 {
-	std::for_each(m_threads.begin(), m_threads.end(),
-		[](const workerThread::ptr& p) { p->join(); });
+	m_threads.clear();
 }
 
 //Implementation of workerThread class
 
 std::atomic<bool> workerThread::s_interrupted(false);
-std::atomic<int> workerThread::s_activeProducersCount(0);
-threadSafeQueue workerThread::s_dataQueue;
+
+workerThread::~workerThread()
+{
+	if (m_thread.joinable()) {
+		m_thread.join();
+	}
+}
+
+void workerThread::execute()
+{
+	m_thread = std::thread(&workerThread::work, this);
+}
 
 void workerThread::interrupt(bool interrupted)
 {
@@ -84,12 +108,12 @@ void workerThread::sleep(int ms)
 //Implementation of producer class
 void producer::work()
 {
-	++s_activeProducersCount;
+	++sharedData::activeProducersCount;
 	while (!s_interrupted) {
-		s_dataQueue.push(random(1, 100));
+		sharedData::dataQueue.push(random(1, 100));
 		sleep(random(0, 100));
 	}
-	--s_activeProducersCount;
+	--sharedData::activeProducersCount;
 }
 
 //Implementation of consumer class
@@ -97,9 +121,9 @@ std::mutex consumer::s_fileMutex;
 
 void consumer::work()
 {
-	while (!s_interrupted || 0 != s_activeProducersCount) {
+	while (!s_interrupted || 0 != sharedData::activeProducersCount) {
 		int value = 0;
-		if (s_dataQueue.pop(value)) {
+		if (sharedData::dataQueue.pop(value, 100)) {
 			std::lock_guard<std::mutex> lockerGuard(s_fileMutex);
 			m_fileRef << value << ", ";
 		}
@@ -112,9 +136,9 @@ std::mutex printer::s_coutMutex;
 
 void printer::work()
 {
-	while (!s_interrupted || 0 != s_activeProducersCount) {
+	while (!s_interrupted || 0 != sharedData::activeProducersCount) {
 		std::lock_guard<std::mutex> locker(s_coutMutex);
-		std::cout << "Current num of elements: " << s_dataQueue.size() << std::endl;
+		std::cout << "Current num of elements: " << sharedData::dataQueue.size() << std::endl;
 		sleep(1000);
 	}
 }

@@ -22,18 +22,14 @@ class workerThread
 public:
 	typedef std::shared_ptr<workerThread> ptr;
 public:
-	//@brief executes the thread.
-	void execute()
-	{
-		m_thread = std::thread(&workerThread::work, this);
-	}
+	//@brief default constructor
+	workerThread() = default;
 
-	//@brief the function returns when the thread execution has completed
-	void join()
-	{
-		assert(m_thread.joinable());
-		m_thread.join();
-	}
+	//@brief returns when the thread execution has completed
+	virtual ~workerThread();
+
+	//@brief executes the thread.
+	void execute();
 
 	//@brief sleeps the thread
 	static void sleep(int ms);
@@ -44,8 +40,6 @@ protected:
 	virtual void work() = 0;
 protected:
 	static std::atomic<bool> s_interrupted;
-	static std::atomic<int> s_activeProducersCount;
-	static threadSafeQueue s_dataQueue;
 private:
 	std::thread m_thread;
 }; // class workerThread
@@ -109,8 +103,8 @@ public:
 	//@brief creates a thread for printer
 	void createPrinter();
 
-	//@brief function returns when the threads execution has completed.
-	void joinThreads();
+	//@brief removes consumers, producers and printer threads
+	void cleanup();
 private:
 	template<typename WorkerType, typename... Args>
 	void createWorkers(unsigned, Args&&...);

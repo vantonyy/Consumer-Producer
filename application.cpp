@@ -1,6 +1,7 @@
 #include "application.hpp"
 #include "consumerProducerManager.hpp"
 
+#include <thread>
 #include <iostream>
 
 namespace consumerProducer {
@@ -60,7 +61,7 @@ int application::run()
 	m.createProducers(m_numOfProducers);
 	m.createPrinter();
 	m.createConsumers(m_numOfConsumers, opener.open(m_fileName));
-	m.joinThreads();
+	m.cleanup();
 	return 0;
 }
 
