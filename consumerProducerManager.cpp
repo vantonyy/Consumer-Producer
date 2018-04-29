@@ -42,6 +42,7 @@ void consumerProducerManager::signalHandler(int sigNum)
 	switch (sigNum)	{
 	case SIGINT:
 		workerThread::interrupt(true);
+		break;
 	default:
 		break;
 	}
