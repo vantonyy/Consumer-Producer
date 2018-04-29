@@ -15,8 +15,8 @@ class application
 public:
 	application(const application&) = delete;
 	application& operator=(const application&) = delete;
-public:
 	application(int, char const**);
+
 	//@brief runs the application
 	int run();
 private:
