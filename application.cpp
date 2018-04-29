@@ -90,11 +90,11 @@ bool application::parseOptions(int argc, char const** argv)
 	assert(1 <= argc);
 	for (int i = 1; i != argc; i += 2) {
 		std::string optionName = argv[i];
-		if (optionName == "-help") {
+		if ("-help" == optionName) {
 			std::cout << usage();
 			return false;
 		}
-		if (!opts.isValidName(optionName)) {
+		if (!opts.isValidOption(optionName)) {
 			std::cout << "Unknown option: " + std::string(argv[i]);
 			return false;
 		}
