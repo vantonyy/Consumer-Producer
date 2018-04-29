@@ -9,7 +9,7 @@
 
 namespace consumerProducer {
 
-//@class applicatio
+//@class application
 class application
 {
 public:
@@ -28,7 +28,7 @@ private:
 	unsigned m_numOfProducers;
 	unsigned m_numOfConsumers;
 	bool m_isValid;
-};
+}; //class application
 
 } // namespace consumerProducer
 
