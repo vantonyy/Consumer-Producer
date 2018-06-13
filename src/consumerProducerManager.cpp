@@ -8,6 +8,26 @@ namespace consumerProducer {
 
 namespace {
 
+//@class noExceptWorkingEnv
+class noExceptWorkingEnv
+{
+public:
+	explicit noExceptWorkingEnv(workerThread& w)
+		: m_worker(w)
+	{}
+
+	void startWork()
+	{
+		try {
+			m_worker.work();
+		} catch (...) {
+			workerThread::interrupt(true);
+		}
+	}
+private:
+	workerThread& m_worker;
+}; //class noExceptWorkingEnv
+
 //@class sharedData
 class sharedData
 {
@@ -93,7 +113,8 @@ workerThread::~workerThread()
 
 void workerThread::execute()
 {
-	m_thread = std::thread(&workerThread::work, this);
+	noExceptWorkingEnv safeWorkingEnv(*this);
+	m_thread = std::thread(&noExceptWorkingEnv::startWork, &safeWorkingEnv);
 }
 
 void workerThread::interrupt(bool interrupted)
