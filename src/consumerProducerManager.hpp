@@ -36,12 +36,21 @@ public:
 
 	//@brief sets interrupt flag
 	static void interrupt(bool);
+
+	//@brief gets error message
+	const std::string& getErrorMsg() const;
+
+	//@brief returns true if an error is occurred, false otherwise
+	bool hasError() const;
 protected:
 	virtual void work() = 0;
+private:
+	void exceptionSafeWork() noexcept;
 protected:
 	static std::atomic<bool> s_interrupted;
 private:
 	std::thread m_thread;
+	std::string m_errorMsg;
 }; // class workerThread
 
 //@class producer
@@ -102,6 +111,9 @@ public:
 
 	//@brief creates a thread for printer
 	void createPrinter();
+
+	//@brief reports errors which occurred during execution of threads
+	void reportErrors();
 
 	//@brief removes consumers, producers and printer threads
 	void cleanup();

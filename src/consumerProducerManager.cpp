@@ -8,26 +8,6 @@ namespace consumerProducer {
 
 namespace {
 
-//@class noExceptWorkingEnv
-class noExceptWorkingEnv
-{
-public:
-	explicit noExceptWorkingEnv(workerThread& w)
-		: m_worker(w)
-	{}
-
-	void startWork() noexcept
-	{
-		try {
-			m_worker.work();
-		} catch (...) {
-			workerThread::interrupt(true);
-		}
-	}
-private:
-	workerThread& m_worker;
-}; //class noExceptWorkingEnv
-
 //@class sharedData
 class sharedData
 {
@@ -95,6 +75,15 @@ void consumerProducerManager::createWorkers(unsigned n, Args&&... args)
 	}
 }
 
+void consumerProducerManager::reportErrors()
+{
+	for (const workerThread::ptr& p : m_threads) {
+		if (p->hasError()) {
+			std::cerr << "Error: " << p->getErrorMsg() << std::endl;
+		}
+	}
+}
+
 void consumerProducerManager::cleanup()
 {
 	m_threads.clear();
@@ -111,10 +100,25 @@ workerThread::~workerThread()
 	}
 }
 
+void workerThread::exceptionSafeWork() noexcept
+{
+	if (s_interrupted) {
+		return;
+	}
+	try {
+		work();
+		return;
+	} catch (const std::exception& e) {
+		m_errorMsg = e.what();
+	} catch (...) {
+		m_errorMsg = "Unknown error occurred";
+	}
+	interrupt(true);
+}
+
 void workerThread::execute()
 {
-	noExceptWorkingEnv safeWorkingEnv(*this);
-	m_thread = std::thread(&noExceptWorkingEnv::startWork, &safeWorkingEnv);
+	m_thread = std::thread(&workerThread::exceptionSafeWork, this);
 }
 
 void workerThread::interrupt(bool interrupted)
@@ -125,6 +129,16 @@ void workerThread::interrupt(bool interrupted)
 void workerThread::sleep(int ms)
 {
 	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+
+const std::string& workerThread::getErrorMsg() const
+{
+	return m_errorMsg;
+}
+
+bool workerThread::hasError() const
+{
+	return !m_errorMsg.empty();
 }
 
 //Implementation of producer class

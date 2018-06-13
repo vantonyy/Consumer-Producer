@@ -61,6 +61,7 @@ int application::run()
 	m.createProducers(m_numOfProducers);
 	m.createPrinter();
 	m.createConsumers(m_numOfConsumers, opener.open(m_fileName));
+	m.reportErrors();
 	m.cleanup();
 	return 0;
 }
