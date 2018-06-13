@@ -16,7 +16,7 @@ public:
 		: m_worker(w)
 	{}
 
-	void startWork()
+	void startWork() noexcept
 	{
 		try {
 			m_worker.work();
